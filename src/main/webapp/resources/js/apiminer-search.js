@@ -9,6 +9,7 @@ var cookieName = "apiminer2-cookie";
 
 // APIMiner URLs - For a particular instance
 var apiminer_server_url = "http://localhost:8080/server";
+
 var dialog_url = apiminer_server_url + "/model/dialog";
 var example_url = apiminer_server_url + "/service/example";
 var recommendation_url = apiminer_server_url + "/service/recommendation/example";

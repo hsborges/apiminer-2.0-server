@@ -12,6 +12,8 @@
 function instruments() {
 	var apiClass = $("ul.inheritance li").last().text();	
 	
+	if (apiClass == null) return; 
+	
 	jQuery.get(
 			examples_counter_url,
 			{apiClass: apiClass},

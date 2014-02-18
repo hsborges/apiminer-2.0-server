@@ -37,9 +37,9 @@ import com.google.gson.JsonPrimitive;
  * Handles requests for the apiminer 2.0 server.
  */
 @Controller
-public class HomeController {
+public class MainController {
 	
-	private final Logger logger = Logger.getLogger(HomeController.class);
+	private final Logger logger = Logger.getLogger(MainController.class);
 	
 	@PersistenceContext
 	private EntityManager em;
@@ -47,6 +47,19 @@ public class HomeController {
 	@RequestMapping(value = {"/"}, method = RequestMethod.GET)
 	public ModelAndView home() {
 		return new ModelAndView("redirect:http://www.apiminer.org");
+	}
+	
+	@RequestMapping(value = {"/status"}, method = RequestMethod.GET)
+	public @ResponseBody String status() {
+		JsonObject jsonObject = new JsonObject();
+		
+		Long numExamples = em.createQuery("SELECT COUNT(e) FROM Example e", Long.class)
+			.setMaxResults(1)
+			.getSingleResult();
+		
+		jsonObject.addProperty("num_examples", numExamples);
+		
+		return jsonObject.toString();
 	}
 	
 	@RequestMapping(value = {"/service/example"}, method = RequestMethod.GET)

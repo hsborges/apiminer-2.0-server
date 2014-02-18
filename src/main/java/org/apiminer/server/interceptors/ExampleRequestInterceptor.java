@@ -12,7 +12,7 @@ import org.apiminer.entities.Log;
 import org.apiminer.entities.LogType;
 import org.apiminer.entities.api.ApiMethod;
 import org.apiminer.entities.example.AssociatedElement;
-import org.apiminer.server.HomeController;
+import org.apiminer.server.MainController;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
@@ -31,8 +31,8 @@ public class ExampleRequestInterceptor extends HandlerInterceptorAdapter {
 		if (handler instanceof HandlerMethod) {
 			HandlerMethod hm = (HandlerMethod) handler;
 			
-			Method single = HomeController.class.getMethod("dialog", String.class, Integer.class);
-			Method recommendations = HomeController.class.getMethod("dialogRecommendation", Long.class, Integer.class);
+			Method single = MainController.class.getMethod("dialog", String.class, Integer.class);
+			Method recommendations = MainController.class.getMethod("dialogRecommendation", Long.class, Integer.class);
 			
 			if (hm.getMethod().equals(single)) {
 				Long apmId = null;

@@ -6,6 +6,7 @@ import java.util.Map;
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -20,14 +21,26 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableJpaRepositories
 @EnableTransactionManagement
 class ApplicationConfig {
+	
+	@Value( "${jdbc.driver}" )
+	private String driverClassName;
+	
+	@Value( "${jdbc.username}" )
+	private String username;
+	
+	@Value( "${jdbc.password}" )
+	private String password;
+	
+	@Value( "${jdbc.url}" )
+	private String url;
 
 	@Bean
 	public DataSource dataSource() {
 		DriverManagerDataSource dataSource = new DriverManagerDataSource();
-		dataSource.setDriverClassName("org.postgresql.Driver");
-		dataSource.setPassword("12345");
-		dataSource.setUsername("postgres");
-		dataSource.setUrl("jdbc:postgresql://localhost:5432/apiminer2db-examples");
+		dataSource.setDriverClassName(driverClassName);
+		dataSource.setPassword(password);
+		dataSource.setUsername(username);
+		dataSource.setUrl(url);
 		
 		return dataSource;
 	}

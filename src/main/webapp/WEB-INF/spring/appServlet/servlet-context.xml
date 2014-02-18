@@ -29,5 +29,7 @@
     	<beans:bean id="exampleRequestInterceptor" 
                  class="org.apiminer.server.interceptors.ExampleRequestInterceptor" />
     </interceptors>
+    
+    <context:property-placeholder location="classpath:jdbc.properties" />
 	
 </beans:beans>
