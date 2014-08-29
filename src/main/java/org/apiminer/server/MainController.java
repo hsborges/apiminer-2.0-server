@@ -1,7 +1,7 @@
 package org.apiminer.server;
 
 import java.io.IOException;
-import java.util.Date;
+import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -12,7 +12,6 @@ import org.apache.log4j.Logger;
 import org.apiminer.entities.Attachment;
 import org.apiminer.entities.Log;
 import org.apiminer.entities.LogType;
-import org.apiminer.entities.api.ApiClass;
 import org.apiminer.entities.api.ApiElement;
 import org.apiminer.entities.api.ApiMethod;
 import org.apiminer.entities.example.AssociatedElement;
@@ -20,9 +19,10 @@ import org.apiminer.entities.example.Example;
 import org.apiminer.entities.example.Recommendation;
 import org.apiminer.server.exceptions.ExampleNotFoundException;
 import org.apiminer.server.exceptions.ResourceNotFound;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -36,6 +36,7 @@ import com.google.gson.JsonPrimitive;
 /**
  * Handles requests for the apiminer 2.0 server.
  */
+
 @Controller
 public class MainController {
 	
@@ -45,62 +46,93 @@ public class MainController {
 	private EntityManager em;
 	
 	@RequestMapping(value = {"/"}, method = RequestMethod.GET)
-	public ModelAndView home() {
-		return new ModelAndView("redirect:http://www.apiminer.org");
+	public ModelAndView index() {
+		return new ModelAndView("index");
 	}
 	
-	@RequestMapping(value = {"/status"}, method = RequestMethod.GET)
-	public @ResponseBody String status() {
-		JsonObject jsonObject = new JsonObject();
-		
-		Long numExamples = em.createQuery("SELECT COUNT(e) FROM Example e", Long.class)
-			.setMaxResults(1)
-			.getSingleResult();
-		
-		jsonObject.addProperty("num_examples", numExamples);
-		
-		return jsonObject.toString();
+	@RequestMapping(value = {"/howitworks"}, method = RequestMethod.GET)
+	public ModelAndView howItWorks() {
+		return new ModelAndView("howitworks");
 	}
 	
+	@RequestMapping(value = {"/ideversion"}, method = RequestMethod.GET)
+	public ModelAndView ideVersion() {
+		return new ModelAndView("ideversion");
+	}
+	
+	@RequestMapping(value = {"/moreinfo"}, method = RequestMethod.GET)
+	public ModelAndView moreInfo() {
+		return new ModelAndView("moreinfo");
+	}
+	
+	@RequestMapping(value = {"/model/dialog"}, method = RequestMethod.GET)
+	public ModelAndView dialogView() {
+		return new ModelAndView("dialog");
+	}
+	
+	@Transactional(readOnly = false)
+	@RequestMapping(value = {"/log/page"}, method = RequestMethod.POST)
+	public ResponseEntity<String> pageAccess(@RequestParam(required = true) String page) {
+		this.em.persist(Log.createLog(LogType.PAGE_REQUEST).requestedUrl(page));
+		return new ResponseEntity<String>(HttpStatus.CREATED);
+	}
+	
+	@Transactional(readOnly = false)
+	@RequestMapping(value = {"/log/click/button"}, method = RequestMethod.POST)
+	public ResponseEntity<String> btnClick(@RequestParam(required = true) Long methodId) {
+		this.em.persist(Log.createLog(LogType.BTN_EXAMPLE_CLICK).apiMethod(methodId));
+		return new ResponseEntity<String>(HttpStatus.CREATED);
+	}
+	
+	@Transactional(readOnly = false)
+	@RequestMapping(value = {"/log/click/filter"}, method = RequestMethod.POST)
+	public ResponseEntity<String> patternClick(@RequestParam(required = true) Long patternId) {
+		this.em.persist(Log.createLog(LogType.USAGE_PATTERN_FILTER).pattern(patternId));
+		return new ResponseEntity<String>(HttpStatus.CREATED);
+	}
+	
+	@Transactional(readOnly = false)
 	@RequestMapping(value = {"/service/example"}, method = RequestMethod.GET)
-	public @ResponseBody String dialog(@RequestParam String methodSignature, @RequestParam(defaultValue="0") Integer position) {
-		JsonObject jsonObject = new JsonObject();
-		
-		ApiMethod method = null;
-		try {
-			method = em.createQuery("SELECT apm FROM ApiMethod apm WHERE apm.fullName = :signature AND apm.apiClass.project.clientOf IS NULL", ApiMethod.class)
-				.setParameter("signature", methodSignature)
-				.setMaxResults(1)
-				.getSingleResult();
-		} catch (NoResultException e) {
-			logger.error(methodSignature + " not found", e);
-			throw new ExampleNotFoundException();
-		}
-		
+	public @ResponseBody String dialog(@RequestParam Long methodId, @RequestParam(defaultValue="0") Integer position) {
 		Recommendation recommendation = null;
 		try {
-			recommendation = em.createQuery("SELECT re FROM Recommendation re WHERE :method = re.fromElement", Recommendation.class)
-						.setParameter("method", method)
+			recommendation = em.createQuery("SELECT re FROM Recommendation re WHERE :methodId = re.fromElement.id", Recommendation.class)
+						.setParameter("methodId", methodId)
 						.setMaxResults(1)
 						.getSingleResult();
 		} catch (NoResultException e) {
-			logger.error("Recommendations not found for " + methodSignature, e);
+			logger.error("Recommendations not found for " + methodId, e);
 			throw new ExampleNotFoundException();
 		}
 		
-		if (position >= recommendation.getElementExamples().size()) {
-			logger.info("Example index not found");
+		int numExamples = em.createQuery("SELECT SIZE(re.elementExamples) FROM Recommendation re WHERE :methodId = re.fromElement.id", Integer.class)
+				.setParameter("methodId", methodId)
+				.setMaxResults(1)
+				.getSingleResult();
+		
+		if (position >= numExamples) {
 			throw new ExampleNotFoundException();
 		}
-
-		Example example = recommendation.getElementExamples().get(position);
 		
-		jsonObject.addProperty("num_examples", recommendation.getElementExamples().size());
+		Example example = (Example) em.createNativeQuery("SELECT e.* FROM Recommendation r JOIN Recommendation_Example re ON r.id = ?1 AND re.recommendation_id = r.id AND re.example_index = ?2 JOIN Example e ON e.id = re.example_id", Example.class)
+			.setParameter(1, methodId)	
+			.setParameter(2, position)
+			.setMaxResults(1)
+			.getSingleResult();
+		
+		JsonObject jsonObject = new JsonObject();
+		jsonObject.addProperty("num_examples", numExamples);
 		jsonObject.addProperty("project", example.getProject().getName());
 		jsonObject.addProperty("file", example.getAttachment().getFileName());
 		jsonObject.addProperty("attachment_id", example.getAttachment().getId());
 		jsonObject.addProperty("example", example.getFormattedCodeExample());
 		jsonObject.addProperty("example_id", example.getId());
+		
+		JsonArray seedsArray = new JsonArray();
+		for (String seed : example.getSeeds()) {
+			seedsArray.add(new JsonPrimitive(seed));
+		}
+		jsonObject.add("seeds", seedsArray);
 		
 		JsonArray jsonArray = new JsonArray();
 		
@@ -123,10 +155,22 @@ public class MainController {
 		
 		jsonObject.add("associations", jsonArray);
 		
+		try {
+			Log log = Log.createLog(LogType.EXAMPLE_REQUEST)
+				.apiMethod(methodId)
+				.example(example.getId(), position);
+			
+			this.em.persist(log);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		return jsonObject.toString();
 	}
 	
-	@RequestMapping(value = {"/service/recommendation/example"}, method = RequestMethod.GET)
+	@Transactional(readOnly = false)
+	@RequestMapping(value = {"/service/patterns/example"}, method = RequestMethod.GET)
 	public @ResponseBody String dialogRecommendation(@RequestParam(required=true) Long associatedElementsId, @RequestParam(defaultValue="0") Integer position) {
 		JsonObject jsonObject = new JsonObject();
 		
@@ -150,48 +194,64 @@ public class MainController {
 			jsonObject.addProperty("attachment_id", example.getAttachment().getId());
 			jsonObject.addProperty("example", example.getFormattedCodeExample());
 			jsonObject.addProperty("example_id", example.getId());
+			
+			JsonArray seedsArray = new JsonArray();
+			for (String seed : example.getSeeds()) {
+				seedsArray.add(new JsonPrimitive(seed));
+			}
+			jsonObject.add("seeds", seedsArray);
+			
+			try {
+				Log log = Log.createLog(LogType.PATTERN_REQUEST)
+						.apiMethod(result.getRecommendedAssociations().getFromElement().getId())
+						.example(example.getId(), position)
+						.pattern(result.getId());
+				this.em.persist(log);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-		
 		
 		return jsonObject.toString();
 	}
 	
 	@Transactional(readOnly=false)
 	@RequestMapping(value = {"/service/evaluation"}, method = RequestMethod.POST)
-	public void evaluate(@RequestParam(required=true)  String apiMethodName, 
+	public ResponseEntity<String> evaluate(@RequestParam(required=true)  Long apiMethodId, 
 						@RequestParam(required=false) Long associatedElementsId, 
 						@RequestParam(required=true) Integer exampleIndex, 
 						@RequestParam(required=true) Long exampleId, 
 						@RequestParam(required=true) Boolean evaluation) {
 		
-		Long methodId = null;
+		ApiMethod method = null;
 		
 		try {
-			methodId = em.createQuery("SELECT apm.id FROM ApiMethod apm WHERE apm.fullName = ?1", Long.class)
-				.setParameter(1, apiMethodName)
-				.setMaxResults(1)
-				.getSingleResult();
+			method = em.find(ApiMethod.class, apiMethodId);
 		} catch (NoResultException e) {
 			logger.info("Method not found!");
 			throw new ExampleNotFoundException();
 		}
 		
-		Log log = new Log();
-		log.setAddedAt(new Date());
-		log.setApiMethodFullName(apiMethodName);
-		log.setApiMethodId(methodId);
-		log.setExampleId(exampleId);
-		log.setExampleIndex(exampleIndex);
-		log.setFeedback(evaluation);
-		log.setRecommendedSetId(associatedElementsId);
-		log.setType(LogType.EXAMPLE_FEEDBACK.name());
-		log.setUser("UNKNOWN");
+		try {
+			Log log = Log.createLog(LogType.EXAMPLE_FEEDBACK)
+				.apiMethod(method.getId())
+				.example(exampleId, exampleIndex)
+				.feedback(evaluation)
+				.pattern(associatedElementsId);
+			
+			em.persist(log);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
-		em.persist(log);
+		return new ResponseEntity<String>(HttpStatus.CREATED);
 	}
 	
-	@RequestMapping(value = {"/service/fullcode/{attachmentId}"}, method = RequestMethod.GET)
-	public void dialogFullCode(@PathVariable Long attachmentId, HttpServletResponse response) throws IOException {
+	@Transactional(readOnly = false)
+	@RequestMapping(value = {"/service/examples/fullcode"}, method = RequestMethod.GET)
+	public void dialogFullCode(@RequestParam(required = true) Long attachmentId, HttpServletResponse response) throws IOException {
 		Attachment attachment = em.find(Attachment.class, attachmentId);
 		
 		if (attachment == null) {
@@ -204,37 +264,43 @@ public class MainController {
         response.getOutputStream().write(attachment.getContent());
         response.getOutputStream().flush();
         response.getOutputStream().close();
+        
+    	try {
+			em.persist(Log.createLog(LogType.FULL_CODE_REQUEST).attachment(attachmentId));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
-	@RequestMapping(value = {"/service/counter/examples"}, method = RequestMethod.GET)
+	@RequestMapping(value = {"/service/examples/counter"}, method = RequestMethod.GET)
 	public @ResponseBody String examples(@RequestParam(required=true) String apiClass) {
-		ApiClass apc = null;
-		try {
-			apc = em.createQuery("SELECT apc FROM ApiClass apc WHERE apc.name = ?1 AND apc.project.clientOf IS NULL", ApiClass.class)
+		List<ApiMethod> methods = em.createQuery("SELECT apm FROM ApiMethod apm JOIN apm.apiClass apc WHERE apc.name = ?1 AND apc.project.clientOf IS NULL", ApiMethod.class)
 				.setParameter(1, apiClass.trim())
-				.setMaxResults(1)
-				.getSingleResult();
-		} catch (Exception e) {
-			logger.info("Class not found!");
-			throw new ExampleNotFoundException();
-		}
+				.getResultList();
 		
 		JsonObject jsonObject = new JsonObject();
-		jsonObject.addProperty("class_name", apc.getName());
+		jsonObject.addProperty("class_name", apiClass.trim());
 		
 		JsonObject jsonMethods = new JsonObject();
-		for (ApiMethod apm : apc.getApiMethods()) {
-			jsonMethods.addProperty(apm.getFullName(), em.find(Recommendation.class, apm.getId()).getElementExamples().size());
+		for (ApiMethod apm : methods) {
+			int recCount = 0;
+			try {
+				recCount = em.createQuery("SELECT SIZE(r.elementExamples) FROM Recommendation r WHERE r.fromElement = :method", Integer.class)
+						.setParameter("method", apm)
+						.getSingleResult();
+			} catch (NoResultException e) {}
+			
+			JsonObject data = new JsonObject();
+			data.addProperty("method_id", apm.getId());
+			data.addProperty("num_examples", recCount);
+			
+			jsonMethods.add(apm.getFullName(), data);
 		}
 		
 		jsonObject.add("methods", jsonMethods);
 		
 		return jsonObject.toString();
-	}
-	
-	@RequestMapping(value = {"/model/dialog"}, method = RequestMethod.GET)
-	public String dialogView() {
-		return "dialog";
 	}
 	
 }

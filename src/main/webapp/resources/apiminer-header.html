@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	
+	<!-- Google analytics -->
+	<script>
+	  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+	
+	  ga('create', 'UA-40768852-1', 'apiminer.org');
+	  ga('send', 'pageview');
+	
+	</script>
+	
+	<style type="text/css">
+		.main {
+			width: 100%;
+			height: 3em;
+			background-color: black;
+		}
+		
+		.container {
+			width: 75%;
+			margin-left: 12.5%;
+		}
+		
+		.container table {
+			width: 100%;
+			height: 3em;
+		}
+		
+		.container table tbody tr th {
+ 			background-color: black;
+ 			text-align: center; 
+ 			vertical-align: middle;
+ 			border: none;
+		}
+		
+		.container table tbody tr th a {
+			color: white; 
+ 			font-size: x-large; 
+ 			font-weight: bold; 
+		}
+	</style>
+</head>
+<body>
+	<div class="main">
+		<div class="container">
+			<table>
+				<tbody>
+					<tr>
+						<th>
+							<a id="menu-home" href="http://apiminer.org" class="active">
+								Home
+							</a>
+						</th>
+						<th>
+							<a id="menu-works" href="http://www.apiminer.org/howitworks">
+									How it Works
+							</a>
+						</th>
+						<th>
+							<a href="http://apiminer.org/doc/reference/packages.html" target="_blank">
+								<img src="http://apiminer.org/resources/images/android-icon.png" height="24px" width="24px">
+									Android APIMiner
+							</a>
+						</th>
+						<th>
+							<a id="menu-ide-version" href="http://www.apiminer.org/ideversion">
+								<img src="http://www.apiminer.org/resources/images/eclipse_logo.png" height="24px" width="24px">
+									IDE Version
+							</a>
+						</th>
+						<th>
+							<a id="menu-info" href="http://apiminer.org/moreinfo">
+									More Info
+							</a>
+						</th>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+	
+	<script type="text/javascript">
+		jQuery.post(page_request_log_url, {page: document.URL});
+	</script>
+</body>
+</html>

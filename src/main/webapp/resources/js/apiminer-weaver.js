@@ -12,7 +12,7 @@
 function instruments() {
 	var apiClass = $("ul.inheritance li").last().text();	
 	
-	if (apiClass == null) return; 
+	if (apiClass == null || apiClass == '') return; 
 	
 	jQuery.get(
 			examples_counter_url,

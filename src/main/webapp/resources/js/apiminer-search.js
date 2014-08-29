@@ -8,14 +8,18 @@ var cookieName = "apiminer2-cookie";
 
 
 // APIMiner URLs - For a particular instance
-var apiminer_server_url = "http://localhost:8080/server";
+//var apiminer_server_url = "http://localhost:8080/server";
+var apiminer_server_url = "http://apiminer.org";
 
 var dialog_url = apiminer_server_url + "/model/dialog";
-var example_url = apiminer_server_url + "/service/example";
-var recommendation_url = apiminer_server_url + "/service/recommendation/example";
+var examples_url = apiminer_server_url + "/service/example";
+var patterns_url = apiminer_server_url + "/service/patterns/example";
 var evaluation_url = apiminer_server_url + "/service/evaluation";
-var full_code_url = apiminer_server_url + "/service/fullcode";
-var examples_counter_url = apiminer_server_url + "/service/counter/examples";
+var full_code_url = apiminer_server_url + "/service/examples/fullcode";
+var examples_counter_url = apiminer_server_url + "/service/examples/counter";
+var btn_click_log_url = apiminer_server_url + "/log/click/button";
+var pattern_filter_log_url = apiminer_server_url + "/log/click/filter";
+var page_request_log_url = apiminer_server_url + "/log/page";
 
 // Obtain the dialog windown in apiminer webserver
 function get_dialog() {
@@ -30,13 +34,12 @@ function get_dialog() {
 			$("#apiminer_example_dialog")
 				.dialog({
 					autoOpen: false,
+					position: "middle",
 					modal:true, 
-					minWidth: 900,
-					maxWidth: 900,
+					minWidth: 1000,
 					maxHeight: 700, 
 					resizable: false,
-					draggable: false,
-					position: "top",
+					draggable: true,
 					open: function(event, ui) {
 						$("body").css({ overflow: 'hidden' });
 					},
@@ -48,33 +51,61 @@ function get_dialog() {
 	}
 }
 
+function btnClick(api_method_id) {
+	jQuery.post(btn_click_log_url, {methodId: api_method_id});
+}
+
+function patternFilter(rec) {
+	jQuery.post(pattern_filter_log_url, {patternId: rec});
+}
+
 // fully the form with the example data
-function populate(api_method_name, example_index, rec) {
+function populate(api_method_id, example_index, rec) {
+	console.log("Populating the dialog ... ");
+	
 	$("#apiminer_example_dialog").dialog('open');
 	
 	$("#apiminer_example_holder").hide();
 	$("#apiminer_loading_example").show();
 	
-	if (api_method_name != null && rec == null) {
+	if (api_method_id != null && rec == null) {
 		jQuery.get(
-				example_url,
-				{methodSignature: api_method_name, position:example_index},
+				examples_url,
+				{methodId: api_method_id, position:example_index},
 				function (data) {
 					var obj = jQuery.parseJSON(data);
 					
-					$("#apiminer_apimethod").val(api_method_name);
-					$("#apiminer_example_dialog").attr("title",api_method_name);
+					$("#apiminer_apimethod").val(api_method_id);
+					
 					$("#apiminer_example_project").text(obj.project);
 					$("#apiminer_example_file a").text(obj.file);
-					$("#apiminer_example_file a").attr({href: full_code_url + "/" + obj.attachment_id});
+					$("#apiminer_example_file a").attr({href: full_code_url + "?attachmentId=" + obj.attachment_id});
 					$("#apiminer_attachment_id").val(obj.attachment_id);
 					
 					$("#apiminer_example_place span").hide();
-					$("#apiminer_example_place pre").html(obj.example.substring(1, obj.example.length - 1).split("\n\t").join("\n"));
+					$("#apiminer_example_place_code").show();
+					
+					var example = obj.example.substring(1, obj.example.length - 1).split("\n\t").join("\n");
+
+					var lines = new Array();
+					var rows = example.split('\n');
+					for (var row = 0; row < rows.length; row++) {
+						for (var seed = 0; seed < obj.seeds.length; seed++) {
+							if (rows[row].replace('/ /g','').indexOf(obj.seeds[seed].split('\n')[0].replace('/ /g','')) > -1) {
+								lines[seed] = row;
+							}
+						}
+					}
+					
+					var code = $("<pre></pre>")
+						.addClass("brush: java; highlight: [" + lines + "];")
+						.html(example);
+					
+					$("#apiminer_example_place_code").html(code);
 					$("#apiminer_example_id").val(obj.example_id);
 					
 					$("#apiminer_example_list").html("");
-					for (var i = 0; i < obj.num_examples; i++) {
+					for (var i = 0; (i < obj.num_examples && i < 20); i++) {
 						opt = $("<option>").attr({value:i}).html(i+1);
 						opt.appendTo("#apiminer_example_list");
 						if (i == example_index) {
@@ -100,31 +131,53 @@ function populate(api_method_name, example_index, rec) {
 					}
 				}
 		).done(function() {
+			SyntaxHighlighter.defaults['gutter'] = false;
+			SyntaxHighlighter.defaults['toolbar'] = false;
 			SyntaxHighlighter.highlight();
 			$("#apiminer_loading_example").hide();
 			$("#apiminer_example_holder").show();
 		}).fail(function(){
+			$("#apiminer_example_place span").show();
+			$("#apiminer_example_place_code").hide();
 			console.log("Problema na obtencao do exemplo.");
-			alert("TODO!");
 		});
 	} else {
 		jQuery.get(
-				recommendation_url,
+				patterns_url,
 				{associatedElementsId: rec, position:example_index},
 				function (data) {
 					var obj = jQuery.parseJSON(data);
 					
 					$("#apiminer_example_project").text(obj.project);
 					$("#apiminer_example_file a").text(obj.file);
-					$("#apiminer_example_file a").attr({href: full_code_url + "/" + obj.attachment_id});
+					$("#apiminer_example_file a").attr({href: full_code_url + "?attachmentId=" + obj.attachment_id});
 					$("#apiminer_attachment_id").val(obj.attachment_id);
 					
 					$("#apiminer_example_place span").hide();
-					$("#apiminer_example_place pre").html(obj.example.substring(1, obj.example.length - 1).split("\n\t").join("\n"));
+					$("#apiminer_example_place_code").show();
+					
+					var example = obj.example.substring(1, obj.example.length - 1).split("\n\t").join("\n");
+
+					var lines = new Array();
+					var rows = example.split('\n');
+					for (var row = 0; row < rows.length; row++) {
+						for (var seed = 0; seed < obj.seeds.length; seed++) {
+							if (rows[row].replace('/ /g','').indexOf(obj.seeds[seed].split('\n')[0].replace('/ /g','')) > -1) {
+								lines[seed] = row;
+							}
+						}
+					}
+					
+					var code = $("<pre></pre>")
+						.addClass("brush: java; highlight: [" + lines + "];")
+						.html(example);
+					
+					$("#apiminer_example_place_code").html(code);
 					$("#apiminer_example_id").val(obj.example_id);
 					
 					$("#apiminer_example_list").html("");
 					for (var i = 0; i < obj.num_examples; i++) {
+						if (i >= 20) break;
 						opt = $("<option>").attr({value:i}).html(i+1);
 						opt.appendTo("#apiminer_example_list");
 						if (i == example_index) {
@@ -133,12 +186,15 @@ function populate(api_method_name, example_index, rec) {
 					}
 				}
 		).done(function(){
+			SyntaxHighlighter.defaults['gutter'] = false;
+			SyntaxHighlighter.defaults['toolbar'] = false;
 			SyntaxHighlighter.highlight();
 			$("#apiminer_loading_example").hide();
 			$("#apiminer_example_holder").show();
 		}).fail(function(){
+			$("#apiminer_example_place span").show();
+			$("#apiminer_example_place_code").hide();
 			console.log("Problema na obtencao do exemplo.");
-			alert("TODO!");
 		});
 	}
 	
@@ -192,10 +248,12 @@ function next() {
 // filter the examples to an usage patterns recommendation 
 function recommendations_filtering(caller){
 	populate(null, 0, caller.value);
+	patternFilter(caller.value);
 }
 
 // clear the usage pattern recommendation filter 
 function clear_recommendations_filtering(){
+	console.log("Filtering the examples with the selected usage pattern");
 	$( "#apiminer_associations_form input:checked" ).prop('checked', false);
 	populate(document.getElementById('apiminer_apimethod').value, 0, null);
 }
@@ -214,7 +272,7 @@ function rate(evaluation) {
 	jQuery.post(
 			evaluation_url,
 			{
-				apiMethodName: document.getElementById('apiminer_apimethod').value, 
+				apiMethodId: document.getElementById('apiminer_apimethod').value, 
 				associatedElementsId: $( "#apiminer_associations_form input:checked" ).val(),
 				exampleIndex: document.getElementById("apiminer_example_list").options[document.getElementById("apiminer_example_list").selectedIndex].value,
 				exampleId: $("#apiminer_example_id").val(),

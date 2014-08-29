@@ -89,14 +89,16 @@
 		
 		<div id="apiminer_example_place" style="min-height: 150px; max-height: 250px; overflow: auto;">
 			<span>No examples for this method.</span>
-			<pre class="brush: java; gutter: false; toolbar: false;"></pre>
+			<div id="apiminer_example_place_code">
+				<pre class="brush: java; gutter: false; toolbar: false;"></pre>
+			</div>
 		</div>
 
 		<div id="apiminer_associations_place">
 			<span id="apiminer_associations_form_label" style="font-weight: bold;"> 
-				Frequently called with: <a id="apiminer_associations_form_clear" href="#" title="Disable the association." onclick="clear_recommendations_filtering();">[Clear]</a>
+				Frequently called with: <a id="apiminer_associations_form_clear" title="Disable the association." onclick="clear_recommendations_filtering();" style="color: blue; font-weight: bold;">[Clear]</a>
 			</span> 
-			<div id="apiminer_associations_form">
+			<div id="apiminer_associations_form" style="font-size: small;">
 				<!-- inputs -->
 			</div>
 		</div>
@@ -107,13 +109,13 @@
 			<button onclick="rate(true)" id="rt_Yes" class="rt_button"
 				title="This example was useful.">
 				<img
-					src="http://apiminer.org/static/images/glyphicons_343_thumbs_up.png"
+					src="http://apiminer.org/resources/images/glyphicons_343_thumbs_up.png"
 					width="16px" height="14px" /> Like
 			</button>
 			<button onclick="rate(false)" id="rt_No" class="rt_button"
 				title="This example wasn't useful.">
 				<img
-					src="http://apiminer.org/static/images/glyphicons_344_thumbs_down.png"
+					src="http://apiminer.org/resources/images/glyphicons_344_thumbs_down.png"
 					width="16px" height="14px" />
 			</button>
 			<button id="next" onclick="next();">Next</button>

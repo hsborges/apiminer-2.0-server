@@ -17,17 +17,11 @@ import javax.persistence.TemporalType;
 @Table(name = "Log")
 public class Log implements Serializable {
 	
-	public static final String GET_EXAMPLE = "GET_EXAMPLE";
-	public static final String GET_RECOMMENDATION = "GET_RECOMMENDATION";
-	public static final String GET_FULL_CODE = "GET_FULL_CODE";
-	public static final String FEEDBACK_EXAMPLE = "FEEDBACK_EXAMPLE";
-	
-	public static final String ANONYMOUS_USER = "ANONYMOUS_USER";
-	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
+	@Column(name = "type")
 	private String type;
 	
 	@Column(name = "example_id")
@@ -39,99 +33,65 @@ public class Log implements Serializable {
 	@Column(name = "api_method_id")
 	private Long apiMethodId;
 	
-	@Column(name = "api_method_full_name")
-	private String apiMethodFullName;
-	
+	@Column(name = "feedback")
 	private Boolean feedback;
 	
-	@Column(name = "user_email")
-	private String userEmail = ANONYMOUS_USER;
+	@Column(name = "usage_pattern_id")
+	private Long usagePatternId;
 	
-	@Column(name = "recommended_set")
-	private Long recommendedSetId;
+	@Column(name = "attachment_id")
+	private Long attachmentId;
+	
+	@Column(name = "requested_url")
+	private String requestedURL;
 	
 	@Column(name = "added_at")
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date addedAt;
-
-	public Long getId() {
-		return id;
+	
+	private Log() {
+		// Singleton
+		this.addedAt = new Date(System.currentTimeMillis());
 	}
-
-	public void setId(Long id) {
-		this.id = id;
+	
+	private Log(LogType logType) {
+		this();
+		this.type = logType.name();
 	}
-
-	public String getType() {
-		return type;
+	
+	public static Log createLog(LogType logType) {
+		return new Log(logType);
 	}
-
-	public void setType(String type) {
-		this.type = type;
-	}
-
-	public Long getExampleId() {
-		return exampleId;
-	}
-
-	public void setExampleId(Long exampleId) {
+	
+	public Log example(Long exampleId, Integer index) {
 		this.exampleId = exampleId;
+		this.exampleIndex = index;
+		return this;
 	}
-
-	public Integer getExampleIndex() {
-		return exampleIndex;
-	}
-
-	public void setExampleIndex(Integer exampleIndex) {
-		this.exampleIndex = exampleIndex;
-	}
-
-	public Long getApiMethodId() {
-		return apiMethodId;
-	}
-
-	public void setApiMethodId(Long apiMethodId) {
+	
+	public Log apiMethod(Long apiMethodId) {
 		this.apiMethodId = apiMethodId;
+		return this;
 	}
-
-	public String getApiMethodFullName() {
-		return apiMethodFullName;
-	}
-
-	public void setApiMethodFullName(String apiMethodFullName) {
-		this.apiMethodFullName = apiMethodFullName;
-	}
-
-	public Boolean getFeedback() {
-		return feedback;
-	}
-
-	public void setFeedback(Boolean feedback) {
+	
+	public Log feedback(boolean feedback) {
 		this.feedback = feedback;
+		return this;
 	}
-
-	public String getUser() {
-		return userEmail;
+	
+	public Log pattern(Long patternId) {
+		this.usagePatternId = patternId;
+		return this;
 	}
-
-	public void setUser(String user) {
-		this.userEmail = user;
+	
+	public Log attachment(Long attachmentId) {
+		this.attachmentId = attachmentId;
+		return this;
 	}
-
-	public Date getAddedAt() {
-		return addedAt;
-	}
-
-	public void setAddedAt(Date addedAt) {
-		this.addedAt = addedAt;
-	}
-
-	public Long getRecommendedSetId() {
-		return recommendedSetId;
-	}
-
-	public void setRecommendedSetId(Long recommendedSetId) {
-		this.recommendedSetId = recommendedSetId;
+	
+	public Log requestedUrl(String url) {
+		this.requestedURL = url;
+		return this;
 	}
 	
 }
