@@ -13,6 +13,7 @@ var apiminer_server_url = "http://apiminer.org";
 
 var dialog_url = apiminer_server_url + "/model/dialog";
 var examples_url = apiminer_server_url + "/service/example";
+var patterns_list_url = apiminer_server_url + "/service/patterns";
 var patterns_url = apiminer_server_url + "/service/patterns/example";
 var evaluation_url = apiminer_server_url + "/service/evaluation";
 var full_code_url = apiminer_server_url + "/service/examples/fullcode";
@@ -20,6 +21,7 @@ var examples_counter_url = apiminer_server_url + "/service/examples/counter";
 var btn_click_log_url = apiminer_server_url + "/log/click/button";
 var pattern_filter_log_url = apiminer_server_url + "/log/click/filter";
 var page_request_log_url = apiminer_server_url + "/log/page";
+var patterns_list_click_log_url = apiminer_server_url + "/log/click/patternslist";
 
 // Obtain the dialog windown in apiminer webserver
 function get_dialog() {
@@ -59,6 +61,10 @@ function patternFilter(rec) {
 	jQuery.post(pattern_filter_log_url, {patternId: rec});
 }
 
+function patternsListClick(patternId) {
+	jQuery.post(patterns_list_click_log_url, {patternId: patternId});
+}
+
 // fully the form with the example data
 function populate(api_method_id, example_index, rec) {
 	console.log("Populating the dialog ... ");
@@ -91,8 +97,14 @@ function populate(api_method_id, example_index, rec) {
 					var rows = example.split('\n');
 					for (var row = 0; row < rows.length; row++) {
 						for (var seed = 0; seed < obj.seeds.length; seed++) {
-							if (rows[row].replace('/ /g','').indexOf(obj.seeds[seed].split('\n')[0].replace('/ /g','')) > -1) {
-								lines[seed] = row;
+							var tl = rows[row].split(' ').join('');
+							var ta = obj.seeds[seed].split('\n');
+							var ts = ta[0].split(' ').join('');
+							
+							if (tl.indexOf(ts) > -1) {
+								for (var i = 0; i < ta.length; i++) {
+									lines.push(i + row);
+								}
 							}
 						}
 					}
@@ -162,8 +174,14 @@ function populate(api_method_id, example_index, rec) {
 					var rows = example.split('\n');
 					for (var row = 0; row < rows.length; row++) {
 						for (var seed = 0; seed < obj.seeds.length; seed++) {
-							if (rows[row].replace('/ /g','').indexOf(obj.seeds[seed].split('\n')[0].replace('/ /g','')) > -1) {
-								lines[seed] = row;
+							var tl = rows[row].split(' ').join('');
+							var ta = obj.seeds[seed].split('\n');
+							var ts = ta[0].split(' ').join('');
+							
+							if (tl.indexOf(ts) > -1) {
+								for (var i = 0; i < ta.length; i++) {
+									lines.push(i + row);
+								}
 							}
 						}
 					}

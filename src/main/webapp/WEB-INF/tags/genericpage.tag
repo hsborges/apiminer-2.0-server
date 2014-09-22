@@ -25,7 +25,7 @@
     
     <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/apiminer-style.css"/>"></link>
 
-    <script src="<c:url value="/resources/js/jquery-1.10.2.min.js"/>"></script>
+    <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
 	<!-- Google analytics -->

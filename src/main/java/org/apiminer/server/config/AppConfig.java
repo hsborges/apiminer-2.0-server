@@ -42,7 +42,7 @@ class AppConfig {
 	@Bean
 	public EntityManagerFactory entityManagerFactory() {
 		EclipseLinkJpaVendorAdapter vendorAdapter = new EclipseLinkJpaVendorAdapter();
-		vendorAdapter.setGenerateDdl(true);
+		vendorAdapter.setGenerateDdl(false);
 		vendorAdapter.setShowSql(false);
 		
 		Map<String, String> map = new HashMap<String, String>();

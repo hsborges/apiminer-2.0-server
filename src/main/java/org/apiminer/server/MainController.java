@@ -92,6 +92,13 @@ public class MainController {
 	}
 	
 	@Transactional(readOnly = false)
+	@RequestMapping(value = {"/log/click/patternslist"}, method = RequestMethod.POST)
+	public ResponseEntity<String> patternsListClick(@RequestParam(required = true) Long patternId) {
+		this.em.persist(Log.createLog(LogType.PATTERNS_LIST_CLICK).pattern(patternId));
+		return new ResponseEntity<String>(HttpStatus.CREATED);
+	}
+	
+	@Transactional(readOnly = false)
 	@RequestMapping(value = {"/service/example"}, method = RequestMethod.GET)
 	public @ResponseBody String dialog(@RequestParam Long methodId, @RequestParam(defaultValue="0") Integer position) {
 		Recommendation recommendation = null;
@@ -167,6 +174,43 @@ public class MainController {
 		}
 		
 		return jsonObject.toString();
+	}
+	
+	@Transactional(readOnly = false)
+	@RequestMapping(value = {"/service/patterns"}, method = RequestMethod.GET)
+	public @ResponseBody String associatedMethods(@RequestParam Long methodId) {
+		Recommendation recommendation = null;
+		try {
+			recommendation = em.createQuery("SELECT re FROM Recommendation re WHERE :methodId = re.fromElement.id", Recommendation.class)
+						.setParameter("methodId", methodId)
+						.setMaxResults(1)
+						.getSingleResult();
+		} catch (NoResultException e) {
+			logger.error("Recommendations not found for " + methodId, e);
+			throw new ExampleNotFoundException();
+		}
+		
+
+		JsonArray jsonArray = new JsonArray();
+		
+		for (AssociatedElement ae : recommendation.getAssociatedElements()) {
+			JsonArray arrayElements = new JsonArray();
+			for (ApiElement elements : ae.getElements()) {
+				if (elements instanceof ApiMethod) {
+					arrayElements.add(new JsonPrimitive(((ApiMethod) elements).getFullName()));
+				} else {
+					arrayElements.add(new JsonPrimitive(elements.getName()));
+				}
+			}
+			
+			JsonObject jsonAssociation = new JsonObject();
+			jsonAssociation.addProperty("associatedElementsId", ae.getId());
+			jsonAssociation.add("associatedElements", arrayElements);
+			
+			jsonArray.add(jsonAssociation);
+		}
+		
+		return jsonArray.toString();
 	}
 	
 	@Transactional(readOnly = false)

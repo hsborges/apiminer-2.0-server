@@ -46,6 +46,8 @@ function instruments() {
 			function(data) {
 				var obj = jQuery.parseJSON(data);
 				
+				var api_methods = {};
+				
 				$("#pubmethods tr, #pubctors tr, #promethods tr").each(function(){
 					if ($(this).hasClass("api")) {
 						var methodName = $(this).find($("td.jd-linkcol a"))
@@ -54,9 +56,15 @@ function instruments() {
 							.replace("/reference/","/")
 							.replace(/\.\.\//g, "")
 							.replace(".html#","/")
-							.replace(/\//g, ".");
+							.replace(/\//g, ".")
+							.replace("...", "[]");
 						
 						var method_data = obj.methods[methodName];
+						
+						if (method_data == undefined || method_data == null) 
+							return;
+												
+						api_methods[methodName] = method_data.method_id;
 						
 						var ebtn = $("<button></button>")
 							.addClass("ui-button ui-state-default ui-corner-all ui-button-text-only ui-state-focus")
@@ -91,6 +99,57 @@ function instruments() {
 						espan.text(num_examples + " Examples");
 					}
 				});
+				
+				function instruments_details(api_method) {
+					jQuery.get(
+							patterns_list_url,
+							{methodId: api_methods[api_method]},
+							function(data) {
+								var associated_elements = jQuery.parseJSON(data);
+								
+								if (associated_elements.length == 0) 
+									return;
+								
+								var selector = $("a[name='" + api_method.replace(apiClass+'.', '') + "']");
+								var next = selector.next().find('.jd-details-descr');
+								var div = $('<div></div>').addClass('jd-tagdata');
+								
+								div.append($('<h5></h5>').addClass('jd-tagtitle').text('Frequently called with: '));
+								
+								var uls = $('<ul></ul>').addClass('nolist');
+								div.append(uls);
+								
+								for (var i = 0; i < associated_elements.length; i++) {
+									var licode = $('<li></li>');
+									uls.append(licode);
+									
+									var code = $('<code></code>');
+									licode.append(code);
+									
+									var elements = associated_elements[i]['associatedElements'];
+									for (var j = 0; j < elements.length; j++) {
+										var sep = elements[j].substring(0, elements[j].indexOf('(')).lastIndexOf('.');
+										
+										var api_method_url = new Array(apiClass.split('.').length).join('../');
+										
+										api_method_url += elements[j].substring(0, sep).split('.').join('/').concat('.html#').concat(elements[j].substring(sep+1, elements[j].length));
+										
+										var aname = $('<a></a>').text(elements[j]+"").attr('href', api_method_url).attr('onClick', 'patternsListClick(' + associated_elements[i]['associatedElementsId'] + ')');
+										code.append(aname);
+										if (j < elements.length - 1)
+											code.append(', ');
+									}
+									
+								}
+								
+								next.append(div);
+							}
+					);
+				};
+				
+				for ( var api_method in api_methods) {
+					instruments_details(api_method);
+				}
 			}
 	);
 	
